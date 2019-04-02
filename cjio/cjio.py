@@ -9,6 +9,9 @@ import copy
 import glob
 import cjio
 from cjio import cityjson
+from cjio import tiling
+
+from itertools import islice
 
 
 #-- https://stackoverflow.com/questions/47437472/in-python-click-how-do-i-see-help-for-subcommands-whose-parents-have-required
@@ -310,6 +313,69 @@ def subset_cmd(id, bbox, random, cotype, invert):
         return s 
     return processor
 
+
+@cli.command('partition')
+@click.option('--depth', type=int, default=2, help='Number of times to subdivide the BBOX.', show_default=True)
+@click.option('--folder_output', help='Specify a folder where to store the partitions.')
+def partition_cmd(folder_output, depth):
+    """
+    Partition the city model into tiles.
+    """
+    def processor(cm):
+        if folder_output is not None:
+            if os.path.exists(folder_output) == False:
+                click.echo(click.style("Folder for output unknown. Partitioning aborted.", fg='red'))
+                return cm
+            else:
+                print_cmd_status('===== Partitioning CityJSON (output: %s) =====' % (folder_output))
+        else:
+            click.echo(click.style("Must specify a folder for output. Partitioning aborted.", fg='red'))
+            return cm
+        bbox = cm.update_bbox()
+        grid_idx = tiling.create_grid(bbox, depth)
+
+        textures = None
+        indent = 0
+        d = os.path.abspath(folder_output)
+
+        print("This --V--V-- always returns 83")
+        bbox = grid_idx[15]
+        print(bbox)
+        s = cm.get_subset_bbox((bbox[0], bbox[1], bbox[3], bbox[4]), invert=False)
+        print(len(s.j['CityObjects']), "\n")
+
+        # TODO B: alternatively, reduce the processor() to the loop, leave the rest outside of...
+        # for idx,bbox in islice(grid_idx.items(), 7):
+        for idx, bbox in grid_idx.items():
+            print(idx, bbox)
+            print("cm", len(cm.j['CityObjects']))
+            s = cm.get_subset_bbox((bbox[0], bbox[1], bbox[3], bbox[4]), invert=False)
+            print("cm post", len(cm.j['CityObjects']))
+
+            print("In the loop the subset is is:", len(s.j['CityObjects']))
+            # TODO B: incorporate the save_cmd() here
+            # TODO B: make it work with textures
+            # filename = '{}.json'.format(idx)
+            # f = os.path.basename(filename)
+            # p = os.path.join(d, f)
+            # print_cmd_status("Saving CityJSON partition to a file (%s)" % (p))
+            # try:
+            #     fo = click.open_file(p, mode='w')
+            #     if textures:
+            #         s.copy_textures(textures, p)
+            #     if indent == 0:
+            #         json_str = json.dumps(s.j, separators=(',', ':'))
+            #         fo.write(json_str)
+            #     else:
+            #         json_str = json.dumps(s.j, indent=indent)
+            #         fo.write(json_str)
+            # except IOError as e:
+            #     raise click.ClickException('Invalid output file: "%s".\n%s' % (p, e))
+            # del json_str
+            print("---------------")
+            del s
+        return cm
+    return processor
 
 @cli.command('remove_duplicate_vertices')
 def remove_duplicate_vertices_cmd():

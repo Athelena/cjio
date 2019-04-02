@@ -1,6 +1,10 @@
+import os
 import pytest
+import click
+from click.testing import CliRunner
 
 from cjio import tiling
+from cjio import cjio
 
 
 class TestPartitioning:
@@ -73,3 +77,14 @@ class TestPartitioning:
         """Test if the city model is partitioned according to the grid"""
         partitions = tiling.partitioner(rotterdam_subset, 2)
         print(partitions)
+
+    def test_partition_cmd(self, data_dir, data_output_dir):
+        """Debugging"""
+        p = os.path.join(data_dir, 'delft.json')
+        runner = CliRunner()
+        result = runner.invoke(cjio.cli,
+                               args=[p,
+                                     'partition',
+                                     '--depth', '2',
+                                     '--folder_output', data_output_dir])
+        a = 2
