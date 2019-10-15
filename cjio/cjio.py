@@ -58,13 +58,6 @@ def cli(context, input, ignore_duplicate_keys):
 def process_pipeline(processors, input, ignore_duplicate_keys):
     extensions = ['.json', '.off', '.poly'] #-- input allowed
     try:
-        bytes = min(32, os.path.getsize(input))
-        raw = open(input, 'rb').read(bytes)
-        if raw.startswith(codecs.BOM_UTF8):
-            click.secho(
-                "WARNING: File has unexpected UTF-8 BOM",
-                bg='red', fg='white', bold=True
-            ) 
         f = click.open_file(input, mode='r', encoding='utf-8-sig')
         extension = os.path.splitext(input)[1].lower()
         if extension not in extensions:
@@ -393,7 +386,7 @@ def merge_cmd(filepattern):
         g = glob.glob(filepattern)
         for i in g:
             try:
-                f = click.open_file(i, mode='r')
+                f = click.open_file(i, mode='r', encoding='utf-8-sig')
                 lsCMs.append(cityjson.reader(f))
             except ValueError as e:
                 raise click.ClickException('%s: "%s".' % (e, input))
