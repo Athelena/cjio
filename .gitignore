@@ -116,3 +116,4 @@ ENV/
 
 # KDE
 .directory
+settings.json
